@@ -127,3 +127,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# AutoHotkey
+AutoHotkeyU64.exe
