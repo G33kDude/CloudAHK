@@ -4,4 +4,5 @@ Print(p*)
 	for k, v in p
 		out .= "`t" (IsObject(v) ? Jxon_Dump(v) : v)
 	stdout.Write(SubStr(out, 2) "`n")
+	stdout.__Handle ; Flush write buffer
 }
