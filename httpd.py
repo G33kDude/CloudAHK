@@ -7,6 +7,7 @@ import http.server
 import os
 import time
 import json
+import random
 from subprocess import Popen, PIPE, TimeoutExpired, run
 
 from io import BytesIO
@@ -38,20 +39,26 @@ DOCKER_COMMAND = [
     '/bin/sh', '-c',            # Run via sh inside the container
     'Xvfb &>/dev/null & ' +     # Start X server
     'openbox &>/dev/null & ' +  # Start Openbox
-    'timeout 5 ' +              # 5 second timeout
     'wine64 Z:/ahk/AutoHotkeyU64.exe /ErrorStdOut \* 2>&1' # Start AHK
 ]
 
 
 # --- Helper Functions ---
 
-def run_code(code, timeout=15.0):
-    # Run docker
-    with Popen(DOCKER_COMMAND, stdin=PIPE, stdout=PIPE) as p:
-        try:
-            return p.communicate(code.encode('utf-8'), timeout)[0].decode('utf-8')
-        except TimeoutExpired:
-            return "Code ran too long!"
+def run_code(code, timeout=7.0):
+    # Generate a random container name
+    name = f'ahk_{random.randint(0,0xFFFFFFFF):08x}'
+    command = DOCKER_COMMAND.copy()
+    command.insert(2, f'--name={name}')
+
+    # Run Docker
+    p = Popen(command, stdin=PIPE, stdout=PIPE)
+    try:
+        return (0, p.communicate(code.encode('utf-8'), timeout)[0].decode('utf-8'))
+    except TimeoutExpired:
+        # Handle timeouts
+        run(['/usr/bin/docker', 'stop', '-t=0', name], timeout=1)
+        return (1, p.communicate()[0].decode('utf-8'))
 
 
 # --- HTTP Server ---
@@ -66,11 +73,20 @@ class Handler(http.server.BaseHTTPRequestHandler):
             body = self.rfile.read(content_length).decode('utf-8')
 
             # Run the code
-            result = run_code(body)
+            start_time = time.perf_counter()
+            timeout, result = run_code(body)
+            elapsed = time.perf_counter() - start_time
+
+            # Build the response JSON
+            response = {
+                    'time': None if timeout else elapsed,
+                    'stdout': result
+            }
 
             self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
             self.end_headers()
-            self.wfile.write(result.encode('utf-8'))
+            self.wfile.write(json.dumps(response).encode('utf-8'))
         except Exception as e:
             self.send_response(500)
             self.end_headers()
