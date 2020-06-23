@@ -25,40 +25,62 @@ CWD = os.getcwd()
 
 IMAGE_NAME = 'wine'
 
-DOCKER_COMMAND = [
-    '/usr/bin/docker', 'run',
-    '--rm',                     # Remove the container after termination
-    '-i',                       # Keep docker attached to STDIN
-    '--network=none',           # Disallow networking inside the container
-    '--cpus=1',                 # Max CPU usage, 100% of one core
-    '--cap-drop=ALL',           # Disallow most "linux capabilities"
-    '-e', 'DISPLAY=:0',         # Use display 0 inside the container
-    '-e', 'WINEDEBUG=-all',     # Suppress WINE debug messages
-    '-v', f'{CWD}/ahk:/ahk:ro', # Map AHK folder into contianer
-    IMAGE_NAME,                 # Use image tagged 'ahk'
-    '/bin/sh', '-c',            # Run via sh inside the container
-    'Xvfb &>/dev/null & ' +     # Start X server
-    'openbox &>/dev/null & ' +  # Start Openbox
-    'wine64 Z:/ahk/AutoHotkeyU64.exe /ErrorStdOut \* 2>&1' # Start AHK
-]
+
+# --- Globals ---
+
+_container_pool = []
 
 
 # --- Helper Functions ---
 
-def run_code(code, timeout=7.0):
-    # Generate a random container name
+def alloc_container():
+    global _container_pool
     name = f'ahk_{random.randint(0,0xFFFFFFFF):08x}'
-    command = DOCKER_COMMAND.copy()
-    command.insert(2, f'--name={name}')
+    Popen([
+        'docker', 'run',
+        '--name', name,
+        '--init',
+        '--rm',                     # Remove the container after termination
+        '-d',                       # Detach and run in the background
+        '--network=none',           # Disallow networking inside the container
+        '--cpus=1',                 # Max CPU usage, 100% of one core
+        '--cap-drop=ALL',           # Disallow most "linux capabilities"
+        '-e', 'DISPLAY=:0',         # Use display 0 inside the container
+        '-v', f'{CWD}/ahk:/ahk:ro', # Map AHK folder into contianer
+        IMAGE_NAME,                 # Use image tagged 'ahk'
+        '/bin/sh', '-c',            # Run via sh inside the container
+        'Xvfb &>/dev/null & ' +     # Start X server
+        'openbox & ' +              # Start Openbox
+        'wine64 explorer'
+    ])
+    _container_pool.append(name)
+    
+
+def run_code(code, timeout=7.0):
+    global _container_pool
+    name = _container_pool.pop(0)
 
     # Run Docker
-    p = Popen(command, stdin=PIPE, stdout=PIPE)
+    p = Popen([
+        'docker', 'exec',
+        '-i',
+        # '-e', 'DISPLAY=:0',
+        '-e', 'WINEDEBUG=-all',
+        '-w', '/tmp',
+        name,
+        '/bin/sh', '-c',
+        'wine64 Z:/ahk/AutoHotkeyU64.exe /ErrorStdOut /CP65001 \* 2>&1 ; wineboot -k'
+    ], stdin=PIPE, stdout=PIPE)
+
     try:
-        return (0, p.communicate(code.encode('utf-8'), timeout)[0].decode('utf-8'))
+        output = p.communicate(code.encode('utf-8'), timeout)[0].decode('utf-8')
+        return (0, output)
     except TimeoutExpired:
         # Handle timeouts
         run(['/usr/bin/docker', 'stop', '-t=0', name], timeout=1)
         return (1, p.communicate()[0].decode('utf-8'))
+    finally:
+       alloc_container()
 
 
 # --- HTTP Server ---
@@ -71,6 +93,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
         try:
             content_length = int(self.headers['Content-Length'])
             body = self.rfile.read(content_length).decode('utf-8')
+            print('Received body', body)
 
             # Run the code
             start_time = time.perf_counter()
@@ -114,6 +137,10 @@ def main():
     print('--- Building Docker Image ---\n')
     run(['docker', 'build', '-t', IMAGE_NAME, 'wine-docker'])
     print('\n')
+
+    print('--- Initializing Container Pool ---\n')
+    for i in range(3):
+        alloc_container()
 
     # Start HTTP
     print('--- Starting HTTP Server ---\n')
