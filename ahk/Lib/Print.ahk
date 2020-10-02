@@ -6,3 +6,9 @@ Print(p*)
 	stdout.Write(SubStr(out, 2) "`n")
 	stdout.__Handle ; Flush write buffer
 }
+
+LogError(exception) {
+  static _ := OnError("LogError")
+  print("Exception Occurred: ", exception)
+  return true
+}
