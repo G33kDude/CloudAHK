@@ -25,6 +25,11 @@ CWD = os.getcwd()
 
 IMAGE_NAME = 'wine'
 
+LANGUAGES = {
+    'ahk': 'wine64 Z:/ahk/AutoHotkeyU64.exe /ErrorStdOut /CP65001 \* 2>&1 ; wineboot -k',
+    'rlx': 'sh /ahk/relax/compile_and_run.sh'
+}
+
 
 # --- Globals ---
 
@@ -56,7 +61,7 @@ def alloc_container():
     _container_pool.append(name)
     
 
-def run_code(code, timeout=7.0):
+def run_code(code, language, timeout=7.0):
     global _container_pool
     name = _container_pool.pop(0)
 
@@ -69,7 +74,7 @@ def run_code(code, timeout=7.0):
         '-w', '/tmp',
         name,
         '/bin/sh', '-c',
-        'wine64 Z:/ahk/AutoHotkeyU64.exe /ErrorStdOut /CP65001 \* 2>&1 ; wineboot -k'
+        LANGUAGES[language]
     ], stdin=PIPE, stdout=PIPE)
 
     try:
@@ -94,10 +99,11 @@ class Handler(http.server.BaseHTTPRequestHandler):
             content_length = int(self.headers['Content-Length'])
             body = self.rfile.read(content_length).decode('utf-8')
             print('Received body', body)
+            language = 'rlx' if 'rlx' in self.path else 'ahk'
 
             # Run the code
             start_time = time.perf_counter()
-            timeout, result = run_code(body)
+            timeout, result = run_code(body, language)
             elapsed = time.perf_counter() - start_time
 
             # Build the response JSON
