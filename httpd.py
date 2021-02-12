@@ -27,7 +27,8 @@ IMAGE_NAME = 'wine'
 
 LANGUAGES = {
     'ahk': 'wine64 Z:/ahk/AutoHotkeyU64.exe /ErrorStdOut /CP65001 \* 2>&1 ; wineboot -k',
-    'rlx': 'sh /ahk/relax/compile_and_run.sh'
+    'rlx': 'sh /ahk/relax/compile_and_run.sh ; wineboot -k',
+    'unix': 'tee tmp.bin &>/dev/null && chmod +x tmp.bin &>/dev/null && ./tmp.bin 2>&1 ; wineboot -k'
 }
 
 
@@ -100,6 +101,10 @@ class Handler(http.server.BaseHTTPRequestHandler):
             body = self.rfile.read(content_length).decode('utf-8')
             print('Received body', body)
             language = 'rlx' if 'rlx' in self.path else 'ahk'
+            if body.startswith('#!'):
+                language = 'unix'
+            if language == 'ahk':
+              body = '#Include <Print>\n' + body
 
             # Run the code
             start_time = time.perf_counter()

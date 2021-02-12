@@ -3,6 +3,12 @@ FROM alpine:3
 # Install WINE and dependencies
 RUN apk add --update-cache xvfb openbox wine ncurses wine_gecko
 
+RUN apk add --update-cache figlet fortune
+
+RUN apk add --update-cache python3 perl python2 nodejs php7
+
+RUN apk add bash fish zsh
+
 # Create a nonprivileged user
 RUN addgroup -S user && adduser -S user -G user
 USER user

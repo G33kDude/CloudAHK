@@ -1,0 +1,144 @@
+DllImport i64 GetCurrentProcess() {Kernel32.dll, GetCurrentProcess}
+DllImport void TerminateProcess(i64, i32) {Kernel32.dll, TerminateProcess}
+
+define void Exit(i32 ExitCode) {
+	windows {
+		TerminateProcess(GetCurrentProcess(), ExitCode)
+	}
+	linux {
+		syscall:(60, ExitCode)
+	}
+}
+
+bits Terror As i8 {
+	[0:1] Dummy
+}
+
+define void ForceTypeError(Terror T) {
+	return 0
+}
+
+#Include ./src/lib/Memory.rlx
+#Include ./src/lib/File.rlx
+
+#Include ./src/lib/String.rlx
+#Include ./src/lib/Console.rlx
+#Include ./src/lib/SafeString.rlx
+#Include ./src/lib/HashMap.rlx
+
+declare i16* OpenAndRead(i8*, i32*)
+
+#Include ./src/compiler/Utility.rlx
+#Include ./src/compiler/Lexer.rlx
+#Include ./src/compiler/Parser.rlx
+#Include ./src/compiler/PEBuilder.rlx
+#Include ./src/compiler/ELFBuilder.rlx
+#Include ./src/compiler/Compiler.rlx
+
+define i16* OpenAndRead(i8* FilePath, i32* OutFileSize) {
+	i64 FileHandle := FileOpen(FilePath, FILE_READ)
+	
+	if (FileHandle < 0) {
+		SwapOutputStream()
+		AWrite("Could not open file: ")
+		AWriteLine(FilePath)
+		
+		AWrite("Error code: ")
+		IWriteLine(FileGetError(FileHandle))
+		
+		AWriteLine("Aborting")
+		Exit(1)
+	}
+	
+	i32 FileSize := FileGetSize(FileHandle)
+	
+	if (OutFileSize != 0) {
+		OutFileSize[0] := FileSize
+	}
+	
+	void* FileBuffer := Alloc(FileSize)
+	
+	i64 ReadResult := FileRead(FileHandle, FileBuffer, FileSize)
+	
+	if (ReadResult < 0) {
+		SwapOutputStream()
+		AWrite("Could not read file: ")
+		AWriteLine(FilePath)
+		
+		AWrite("Error code: ")
+		IWriteLine(FileGetError(ReadResult))
+		
+		AWriteLine("Aborting")
+		Exit(1)
+	}
+	
+	i16* Source := AToW(FileBuffer As i8*, FileSize)
+	
+	Free(FileBuffer)
+	FileClose(FileHandle)
+	
+	return Source
+}
+
+define i32 Main(i64 ArgC, i8** ArgV) {	
+	GetArgs(&ArgC, &ArgV) /* NOP on Linux */
+	
+	windows {
+		i8 OutputELF := false
+	}
+	linux {
+		i8 OutputELF := true
+	}
+	
+	i8* InputFilePath := 0
+	i8* OutputFilePath := 0
+	i8 DumpFunctionBytes := true
+	
+	for (i32 Index := 0, Index < ArgC, Index += 1) {
+		i8* NextArg := ArgV[Index]
+		
+		if (StringEquals(NextArg, "--elf")) {
+			OutputELF := true
+		}
+		else if (StringEquals(NextArg, "--pe")) {
+			OutputELF := false
+		}
+		else if (StringEquals(NextArg, "--function-bytes") || StringEquals(NextArg, "-fb")) {
+			DumpFunctionBytes := true
+		}
+		else if (StringEquals(NextArg, "-i")) {			
+			Index += 1
+			InputFilePath := ArgV[Index]
+			
+			AWrite("Input File: ")
+			AWriteLine(InputFilePath)
+		}
+		else if (StringEquals(NextArg, "-o")) {
+			Index += 1
+			OutputFilePath := ArgV[Index]
+		
+			AWrite("Output File: ")
+			AWriteLine(OutputFilePath)
+		}
+	}
+
+	if !(InputFilePath && OutputFilePath) {
+		if (ArgC = 3) {
+			InputFilePath := ArgV[1]
+			OutputFilePath := ArgV[2]
+		}
+		else {
+			SwapOutputStream()
+			AWriteLine("No input+output file, aborting")
+			Exit(1)
+		}
+	}
+	
+	i32 SourceLength := 0
+	
+	i16* Source := OpenAndRead(InputFilePath, &SourceLength)
+	
+	TokenizerState* T := NewTokenizer(AToS(InputFilePath), Source, SourceLength)
+	ParserState* P := ParserStart(T, OutputELF)
+	CompilerStart(P, OutputFilePath, OutputELF, DumpFunctionBytes)
+}
