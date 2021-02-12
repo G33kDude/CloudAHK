@@ -51,6 +51,8 @@ def alloc_container():
         '--network=none',           # Disallow networking inside the container
         '--cpus=1',                 # Max CPU usage, 100% of one core
         '--cap-drop=ALL',           # Disallow most "linux capabilities"
+        '--memory=500m',            # Limit container memory to 500MB
+        '--memory-swap=500m',       # Don't allow any additional swap memory
         '-e', 'DISPLAY=:0',         # Use display 0 inside the container
         '-v', f'{CWD}/ahk:/ahk:ro', # Map AHK folder into contianer
         IMAGE_NAME,                 # Use image tagged 'ahk'
@@ -60,7 +62,6 @@ def alloc_container():
         'wine64 explorer'
     ])
     _container_pool.append(name)
-    
 
 def run_code(code, language, timeout=7.0):
     global _container_pool
