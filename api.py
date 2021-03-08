@@ -16,7 +16,7 @@ from fastapi.responses import RedirectResponse
 cloudapi = FastAPI(
     title='CloudAHK',
     description='An API that lets you execute autohotkey code remotely.',
-    version='dev'
+    version='v0'
 )
 
 AHK_URL = 'https://www.autohotkey.com/download/ahk.zip'
@@ -110,10 +110,15 @@ def container_amt():
     global _container_pool
     return {'num': len(_container_pool)}
 
+@cloudapi.post('/{language}')
+async def ace_legacy_run(language: str, request: Request):
+    '''DEPRECATED. Use \'/{language}/run\''''
+    return RedirectResponse(url=f'/cloudahk/api/v0/{language}/run', status_code=307)
+
 @cloudapi.post('/run/{language}')
 async def legacy_run(language: str, request: Request):
     '''DEPRECATED. Use \'/{language}/run\''''
-    return RedirectResponse(url=f'/cloudahk/api/dev/{language}/run', status_code=308)
+    return RedirectResponse(url=f'/cloudahk/api/v0/{language}/run', status_code=308)
 
 
 @cloudapi.post('/{language}/run')
