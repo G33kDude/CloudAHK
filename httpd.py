@@ -8,18 +8,22 @@ from io import BytesIO
 from os import getenv
 from subprocess import run
 from zipfile import ZipFile
-from config import VERSION, PORT, RELOAD, PATH, IMAGE_NAME, WORKERS, LOGGING_LEVEL, IMAGE_NAME, AHK_URL, AHK_2_URL, HOST
-import uvicorn
+
 import coloredlogs
+import uvicorn
 import verboselogs
+
+from config import (AHK_2_URL, AHK_URL, HOST, IMAGE_NAME, LOGGING_LEVEL, PATH,
+                    PORT, RELOAD, VERSION, WORKERS)
 
 
 def setup_logging():
+    logging.getLogger().setLevel(LOGGING_LEVEL)
     verboselogs.install()
-    coloredlogs.install(level=LOGGING_LEVEL,
+    coloredlogs.install(level=logging.SPAM,
                         fmt='%(asctime)s [%(levelname)s] %(name)s: %(message)s')
-    log: verboselogs.VerboseLogger = logging.getLogger(__name__)
-
+    log = verboselogs.VerboseLogger(__name__)
+    
     # root = logging.getLogger()
     # fmt = logging.Formatter(fmt='{asctime} [{levelname}] {name}: {message}', datefmt='%Y-%m-%d %H:%M:%S', style='{')
     # #logging.basicConfig(level=LOGGING_LEVEL,
@@ -61,7 +65,6 @@ def main():
         with ZipFile(BytesIO(resp.read())) as zipfile:
             zipfile.extract('AutoHotkeyU64.exe', 'ahk/v2')
         log.spam('autohotkey V2 extracted')
-
 
     # Build docker image
     log.info('Building Docker Image')
