@@ -1,0 +1,6 @@
+coloredlogs==15.0
+fastapi==0.63.0
+urllib3=1.25.11
+python-dotenv==0.16.0
+uvicorn[standard]==0.13.4
+verboselogs==1.7
