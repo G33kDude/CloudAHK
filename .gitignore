@@ -135,3 +135,4 @@ AutoHotkeyU64.exe
 #ide
 .vscode
 *.code_workspace
+*.code-workspace
