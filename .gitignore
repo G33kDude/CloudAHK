@@ -131,6 +131,7 @@ dmypy.json
 # AutoHotkey
 AutoHotkeyU64.exe
 
+.*
 
 #ide
 .vscode

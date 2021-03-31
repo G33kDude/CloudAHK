@@ -43,7 +43,7 @@ docutils==0.16
 entrypoints==0.3
 et-xmlfile==1.0.1
 fastapi==0.63.0
-urllib3=1.25.11
+urllib3==1.25.11
 python-dotenv==0.16.0
 python-jsonrpc-server @ file:///tmp/build/80754af9/python-jsonrpc-server_1600278539111/work
 python-language-server @ file:///tmp/build/80754af9/python-language-server_1600454544709/work

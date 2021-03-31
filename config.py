@@ -1,11 +1,13 @@
-from os import getenv
-from dotenv import load_dotenv
-import logging
-import verboselogs
-load_dotenv()
 from os import getcwd
+import logging
+from os import getenv
 
-LOGGING_LEVEL = verboselogs.SPAM
+import verboselogs
+from dotenv import load_dotenv
+
+load_dotenv()
+
+LOGGING_LEVEL = logging.SPAM
 VERSION = getenv('VERSION')
 PORT = int(getenv('PORT'))
 RELOAD = False
