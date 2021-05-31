@@ -1,0 +1,16 @@
+click==7.1.2
+coloredlogs==15.0
+fastapi==0.63.0
+h11==0.12.0
+httptools==0.1.1
+humanfriendly==9.1
+pydantic==1.8.1
+python-dotenv==0.16.0
+PyYAML==5.4.1
+starlette==0.13.6
+typing-extensions==3.7.4.3
+uvicorn==0.13.4
+uvloop==0.15.2
+verboselogs==1.7
+watchgod==0.7
+websockets==8.1
