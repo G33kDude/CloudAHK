@@ -1,6 +1,6 @@
 click==7.1.2
 coloredlogs==15.0
-fastapi==0.63.0
+fastapi==0.65.2
 h11==0.12.0
 httptools==0.1.1
 humanfriendly==9.1
