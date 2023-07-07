@@ -28,7 +28,7 @@ CWD = os.getcwd()
 IMAGE_NAME = 'wine'
 
 LANGUAGES = {
-    'ahk': 'wine64 Z:/ahk/AutoHotkeyU64.exe /ErrorStdOut /CP65001 \* 2>&1 ; wineboot -k',
+    'ahk': 'wine64 Z:/ahk/AutoHotkeyU64.exe /include Z:/ahk/CloudAHK.ahk /ErrorStdOut=UTF-8 /CP65001 \* 2>&1 ; wineboot -k',
     'unix': 'tee tmp.bin &>/dev/null && chmod +x tmp.bin &>/dev/null && ./tmp.bin 2>&1 ; wineboot -k'
 }
 
@@ -127,8 +127,6 @@ async def run_lang(language: str, request: Request):
     print('Received code', code)
     if code.startswith('#!'):
         language = 'unix'
-    if language == 'ahk':
-        code = '#Include <Print>\n\n' + code
 
     # Run the code
     start_time = time.perf_counter()
