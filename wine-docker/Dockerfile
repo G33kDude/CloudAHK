@@ -1,20 +1,22 @@
-FROM alpine:3
+FROM alpine:3.18
 
 # Install WINE and dependencies
-RUN apk add --update-cache xvfb openbox wine ncurses wine_gecko
+RUN apk add \
+	--repository http://dl-cdn.alpinelinux.org/alpine/v3.18/community/ \
+	mingw-w64-gcc mingw-w64-binutils php82 \
+	&& apk add --update-cache \
+	xvfb openbox wine ncurses wine_gecko \
+	figlet fortune \
+	python3 perl nodejs php82 \
+	bash fish zsh \
+	build-base \
+	&& addgroup -S user -g 81358 && adduser -S user -G user -u 81358
 
-RUN apk add --update-cache figlet fortune
-
-RUN apk add --update-cache python3 perl python2 nodejs php7
-
-RUN apk add bash fish zsh
-
-# Create a nonprivileged user
-RUN addgroup -S user && adduser -S user -G user
+# Use the nonprivileged user we created
 USER user
 
 # Create wineprefix
-# Wine waits three seconds after the last process quits before saving the
-# registry and shutting down. Sleep 5 seconds to ensure the registry gets
+# Wine waits at least three seconds after the last process quits before saving
+# the registry and shutting down. Sleep a while to ensure the registry gets
 # saved correctly.
-RUN sh -c 'wineboot && sleep 5'
+RUN wineboot && sleep 20
