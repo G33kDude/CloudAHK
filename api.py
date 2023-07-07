@@ -63,7 +63,7 @@ async def alloc_container(enter_pool=True):
         '/bin/sh', '-c',            # Run via sh inside the container
         'Xvfb &>/dev/null & ' +     # Start X server
         'openbox & ' +              # Start Openbox
-        'wine64 explorer'
+        'wine64 notepad'
     ])
     await asyncio.sleep(0.1)
     print(f'container made: {name}')
