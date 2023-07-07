@@ -29,7 +29,6 @@ IMAGE_NAME = 'wine'
 
 LANGUAGES = {
     'ahk': 'wine64 Z:/ahk/AutoHotkeyU64.exe /ErrorStdOut /CP65001 \* 2>&1 ; wineboot -k',
-    'rlx': 'sh /ahk/relax/compile_and_run.sh ; wineboot -k',
     'unix': 'tee tmp.bin &>/dev/null && chmod +x tmp.bin &>/dev/null && ./tmp.bin 2>&1 ; wineboot -k'
 }
 
