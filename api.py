@@ -29,6 +29,8 @@ IMAGE_NAME = 'wine'
 
 LANGUAGES = {
     'ahk': 'wine64 Z:/ahk/AutoHotkeyU64.exe /include Z:/ahk/CloudAHK.ahk /ErrorStdOut=UTF-8 /CP65001 \* 2>&1 ; wineboot -k',
+    'ahk1': 'wine64 Z:/ahk/AutoHotkeyU64.exe /include Z:/ahk/CloudAHK.ahk /ErrorStdOut=UTF-8 /CP65001 \* 2>&1 ; wineboot -k',
+    'ahk2': 'wine64 Z:/ahk2/AutoHotkeyU64.exe /include Z:/ahk2/CloudAHK.ahk /ErrorStdOut=UTF-8 /CP65001 \* 2>&1 ; wineboot -k',
     'unix': 'tee tmp.bin &>/dev/null && chmod +x tmp.bin &>/dev/null && ./tmp.bin 2>&1 ; wineboot -k'
 }
 
@@ -56,6 +58,7 @@ async def alloc_container(enter_pool=True):
         '--memory-swap=500m',       # Don't allow any swap memory
         '-e', 'DISPLAY=:0',         # Use display 0 inside the container
         '-v', f'{CWD}/ahk:/ahk:ro',  # Map AHK folder into contianer
+        '-v', f'{CWD}/ahk2:/ahk2:ro',  # Map AHK folder into contianer
         IMAGE_NAME,                 # Use image tagged 'ahk'
         '/bin/sh', '-c',            # Run via sh inside the container
         'Xvfb &>/dev/null & ' +     # Start X server
@@ -127,6 +130,8 @@ async def run_lang(language: str, request: Request):
     print('Received code', code)
     if code.startswith('#!'):
         language = 'unix'
+    if code.startswith(';v2'):
+        language = 'ahk2'
 
     # Run the code
     start_time = time.perf_counter()
